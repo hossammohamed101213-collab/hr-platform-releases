@@ -1,0 +1,25 @@
+{
+  "seller": "SEVENGATES — البوابات السبع لمقاولات البناء",
+  "website": "https://www.sevengates.online",
+  "whatsapp": "201062101213",
+  "email": "hossam.mohamed101213@gmail.com",
+  "currency": "AED",
+  "plans": [
+    {
+      "id": "business",
+      "title": "النسخة الكاملة — شراء لمرة واحدة",
+      "price": 6000,
+      "note": "كل الأقسام والميزات · ترخيص مدى الحياة · دفعة واحدة بدون اشتراك · تحديثات تلقائية"
+    }
+  ],
+  "bank": {
+    "name": "",
+    "account": "",
+    "iban": "",
+    "holder": "",
+    "swift": ""
+  },
+  "payLink": "",
+  "remoteConfig": "https://raw.githubusercontent.com/sevencargoae-png/hr-platform-releases/main/vendor-config.json",
+  "claimUrl": ""
+}

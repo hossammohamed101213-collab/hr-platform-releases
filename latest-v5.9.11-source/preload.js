@@ -1,0 +1,32 @@
+const { contextBridge, ipcRenderer } = require('electron');
+const inv = (ch) => (...a) => ipcRenderer.invoke(ch, ...a);
+contextBridge.exposeInMainWorld('api', {
+  auth: { status: inv('auth:status'), setup: inv('auth:setup'), login: inv('auth:login'), lock: inv('auth:lock'), recoveryStatus: inv('auth:recoveryStatus'), recoveryCreate: inv('auth:recoveryCreate'), recoveryReset: inv('auth:recoveryReset'), session: inv('auth:session'), recoveryEmailStatus: inv('auth:recoveryEmailStatus'), recoveryEmailEnroll: inv('auth:recoveryEmailEnroll'), recoveryEmailRequest: inv('auth:recoveryEmailRequest'), recoveryEmailReset: inv('auth:recoveryEmailReset'), onRevoked: cb => ipcRenderer.on('session:revoked', () => cb()), changePassword: inv('auth:changePassword') },
+  lic: { status: inv('lic:status'), activate: inv('lic:activate'), activateCode: inv('lic:activateCode'), deactivate: inv('lic:deactivate'), keygen: inv('lic:keygen'), newCode: inv('lic:newCode'), listCodes: inv('lic:listCodes'), revokeCode: inv('lic:revokeCode'), plans: inv('lic:plans'), checkNow: inv('lic:checkNow'), onChanged: cb => ipcRenderer.on('lic:changed', (e, st) => cb(st)), vendor: inv('lic:vendor'), claim: inv('lic:claim') },
+  openUrl: inv('open:url'), openSite: inv('site:open'),
+  owner: { setKey: inv('owner:setKey'), getKey: inv('owner:getKey') },
+  pin: { status: inv('pin:status'), set: inv('pin:set'), verify: inv('pin:verify') },
+  db: { load: inv('db:load'), upsert: inv('db:upsert'), delete: inv('db:delete'), setSetting: inv('db:setSetting'), audit: inv('db:audit'), wipe: inv('db:wipe') },
+  self: { data: inv('self:data'), checkout: inv('self:checkout') },
+  data: { location: inv('data:location'), chooseAndMove: inv('data:chooseAndMove') },
+  relaunch: inv('app:relaunch'),
+  file: { save: inv('file:save'), get: inv('file:get'), delete: inv('file:delete'), pick: inv('file:pick'), pickText: inv('file:pickText'), pickSheet: inv('file:pickSheet') },
+  backup: { emergency: inv('backup:emergency'), now: inv('backup:now'), saveAs: inv('backup:saveAs'), list: inv('backup:list'), openFolder: inv('backup:openFolder'), chooseDir: inv('backup:chooseDir'), restore: inv('backup:restore'), exportPlain: inv('backup:exportPlain'), offersFromBackup: inv('offers:fromBackup') },
+  prefs: { get: inv('prefs:get'), set: inv('prefs:set') },
+  user: { list: inv('user:list'), create: inv('user:create'), update: inv('user:update'), resetPassword: inv('user:resetPassword'), unbindDevice: inv('user:unbindDevice'), delete: inv('user:delete') }, device: inv('app:device'),
+  sync: { status: inv('sync:status'), test: inv('sync:test'), configure: inv('sync:configure'), now: inv('sync:now'), onState: cb => ipcRenderer.on('sync:state', (e, st) => cb(st)), onReloaded: cb => ipcRenderer.on('sync:reloaded', (e, info) => cb(info)) },
+  draft: { get: inv('draft:get'), set: inv('draft:set'), del: inv('draft:del'), list: inv('draft:list') },
+  treasury: { recon: inv('treasury:recon') },
+  books: { lock: inv('books:lock') },
+  secpin: { status: inv('secpin:status'), verify: inv('secpin:verify'), set: inv('secpin:set'), reset: inv('secpin:reset') },
+  del: { status: inv('del:status'), auth: inv('del:auth') },
+  dev: { status: inv('dev:status'), ping: inv('dev:ping'), list: inv('dev:list'), setStatus: inv('dev:setStatus'), onChanged: cb => ipcRenderer.on('device:changed', (e, p) => cb(p)), onKilled: cb => ipcRenderer.on('device:killed', (e, p) => cb(p)) },
+  setgate: { status: inv('set:status'), unlock: inv('set:unlock') },
+  trash: { count: inv('trash:count'), list: inv('trash:list'), confirm: inv('trash:confirm'), restore: inv('trash:restore') },
+  review: { count: inv('review:count'), list: inv('review:list'), approve: inv('review:approve'), remove: inv('review:remove'), prune: inv('review:prune') },
+  usercode: { set: inv('user:setCode'), clear: inv('user:clearCode') },
+  reg: { submit: inv('reg:submit'), poll: inv('reg:poll'), verify: inv('reg:verify'), reset: inv('reg:reset'), data: inv('reg:data'), applied: inv('reg:applied'), terms: inv('reg:terms'), purchase: inv('reg:purchase'), list: inv('reg:list'), approve: inv('reg:approve'), reject: inv('reg:reject'), done: inv('reg:done') },
+  upd: { state: inv('upd:state'), check: inv('upd:check'), download: inv('upd:download'), install: inv('upd:install'), onState: cb => ipcRenderer.on('upd:state', (e, st) => cb(st)) },
+  exportCSV: inv('export:csv'), printPDF: inv('print:pdf'), printHTML: inv('print:html'), notify: inv('notify'), info: inv('app:info'),
+  onPersistStatus: (cb) => { ipcRenderer.on('persist-status', (e, s) => cb(s)); }
+});

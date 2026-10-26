@@ -1,0 +1,15 @@
+{
+  "name": "hr-platform",
+  "productName": "منصة شؤون الموظفين",
+  "version": "5.9.11",
+  "description": "منصة مغلقة لإدارة شؤون الموظفين — تعمل بدون إنترنت",
+  "main": "main.js",
+  "author": "Hossam",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "chart.js": "^4.4.0",
+    "electron-updater": "^6.8.9",
+    "sql.js": "^1.12.0"
+  }
+}

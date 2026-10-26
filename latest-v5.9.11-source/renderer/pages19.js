@@ -1,0 +1,234 @@
+/* ==================== 5.8.0: الطباعة العامة — ورقة من الخارج، ليتر هيد، ختم وتوقيع، أوراق خارجية، توزيع تلقائي ==================== */
+const PR_KINDS={paper:'ورقة خارجية',invoice:'فاتورة',cheque:'شيك',statement:'كشف / بيان',letterhead:'ليتر هيد',other:'أخرى'};
+let prTab='print';
+let prCur={name:'',mime:'',pages:[],raw:null,land:false,fileId:null};
+let prItems={},prSel=null;
+let prOpt={mode:'asis',stampOn:true,sigOn:true,stampW:24,sigW:26,last:{stamp:{x:60,y:76},sig:{x:12,y:78}},top:42,bottom:28,side:18,title:'',text:'',dateOn:true,pv:0};
+try{const o=JSON.parse(localStorage.getItem('prOpt')||'null');if(o&&typeof o==='object')prOpt={...prOpt,...o,title:'',text:'',pv:0};}catch(e){}
+const prSave=()=>{try{localStorage.setItem('prOpt',JSON.stringify({...prOpt,title:'',text:''}));}catch(e){}};
+const extCache={};
+const filePick=a=>window.__testPick?window.__testPick(a):api.file.pick(a);
+const doPrint=h=>window.__testPrint?window.__testPrint(h):api.printHTML(h);
+const du=(mime,b64)=>'data:'+mime+';base64,'+b64;
+const SAFE_IMG=/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+const extRows=kind=>(S.extdocs||[]).filter(x=>x.kind===kind).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+/* الصف الافتراضي: المحدد بالمعرّف، وإلا الذي عليه «تلقائي»، وإلا أول واحد */
+const extRow=(kind,id)=>{const l=extRows(kind);return (id&&l.find(x=>x.id===id))||l.find(x=>x.dest==='auto')||l[0]||null;};
+const extImg=(kind,id)=>{const r=extRow(kind,id);const u=r&&r.file_id&&extCache[r.file_id];return u&&SAFE_IMG.test(u)?u:'';};
+/* ---------- 5.9.6: إزالة خلفية الختم/التوقيع تلقائياً (PNG شفاف بلا إطار) ---------- */
+function cleanImg(src){return new Promise(res=>{const im=new Image();im.onerror=()=>res(src);im.onload=()=>{try{
+  let w=im.naturalWidth,h=im.naturalHeight;if(!w||!h)return res(src);const sc=Math.min(1,1400/Math.max(w,h));w=Math.max(1,Math.round(w*sc));h=Math.max(1,Math.round(h*sc));
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d',{willReadFrequently:true});cx.drawImage(im,0,0,w,h);const id=cx.getImageData(0,0,w,h),d=id.data;
+  /* هل الصورة شفافة أصلاً؟ (حواف) */
+  let edge=0,tot=0;for(let x=0;x<w;x+=Math.max(1,w>>5)){for(const y of [0,h-1]){tot++;if(d[(y*w+x)*4+3]<200)edge++;}}for(let y=0;y<h;y+=Math.max(1,h>>5)){for(const x of [0,w-1]){tot++;if(d[(y*w+x)*4+3]<200)edge++;}}
+  if(edge/tot<0.5){
+    const B=Math.max(6,Math.round(Math.max(w,h)/26)),gw=Math.ceil(w/B),gh=Math.ceil(h/B);const bgc=new Float32Array(gw*gh*3),bgl=new Float32Array(gw*gh);
+    for(let gy=0;gy<gh;gy++)for(let gx=0;gx<gw;gx++){const x0=gx*B,y0=gy*B,x1=Math.min(w,x0+B),y1=Math.min(h,y0+B);const arr=[];for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const i=(y*w+x)*4;arr.push([d[i]*0.3+d[i+1]*0.59+d[i+2]*0.11,i]);}
+      arr.sort((a,b)=>b[0]-a[0]);const n=Math.max(1,Math.floor(arr.length*0.25));let r=0,g=0,b=0;for(let k=0;k<n;k++){const i=arr[k][1];r+=d[i];g+=d[i+1];b+=d[i+2];}const o=gy*gw+gx;bgc[o*3]=r/n;bgc[o*3+1]=g/n;bgc[o*3+2]=b/n;bgl[o]=(r*0.3+g*0.59+b*0.11)/n;}
+    /* تمدّد: الكتل المغطاة بالحبر بالكامل تستعير خلفية جيرانها */
+    const dil=new Float32Array(gw*gh*3);for(let gy=0;gy<gh;gy++)for(let gx=0;gx<gw;gx++){let best=-1,bo=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const x=gx+dx,y=gy+dy;if(x<0||y<0||x>=gw||y>=gh)continue;const o=y*gw+x;if(bgl[o]>best){best=bgl[o];bo=o;}}const o=gy*gw+gx;dil[o*3]=bgc[bo*3];dil[o*3+1]=bgc[bo*3+1];dil[o*3+2]=bgc[bo*3+2];}
+    const bgAt=(x,y,c)=>{const fx=Math.min(gw-1,Math.max(0,x/B-0.5)),fy=Math.min(gh-1,Math.max(0,y/B-0.5));const x0=Math.floor(fx),y0=Math.floor(fy),x1=Math.min(gw-1,x0+1),y1=Math.min(gh-1,y0+1),tx=fx-x0,ty=fy-y0;const v=(a,b)=>dil[(b*gw+a)*3+c];return (v(x0,y0)*(1-tx)+v(x1,y0)*tx)*(1-ty)+(v(x0,y1)*(1-tx)+v(x1,y1)*tx)*ty;};
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;const br=Math.max(40,bgAt(x,y,0)),bg=Math.max(40,bgAt(x,y,1)),bb=Math.max(40,bgAt(x,y,2));
+      const rr=Math.min(1,d[i]/br),rg=Math.min(1,d[i+1]/bg),rb=Math.min(1,d[i+2]/bb);const dark=1-Math.min(rr,rg,rb);let a=(dark-0.12)/0.38;a=a<0?0:a>1?1:a;
+      if(a<=0.01){d[i+3]=0;d[i]=d[i+1]=d[i+2]=0;continue;}
+      d[i]=Math.max(0,Math.min(255,(d[i]-br*(1-a))/a));d[i+1]=Math.max(0,Math.min(255,(d[i+1]-bg*(1-a))/a));d[i+2]=Math.max(0,Math.min(255,(d[i+2]-bb*(1-a))/a));d[i+3]=Math.round(a*255);}
+  }
+  /* إزالة الإطار/الحدود: أي مكوّن متصل يلمس حافة الصورة ويمتد على معظمها (إطار أو خط حافة) يُمحى */
+  {const lab=new Int32Array(w*h),stk=new Int32Array(w*h);let nl=0;const on=i=>d[i*4+3]>60;
+   for(let s0=0;s0<w*h;s0++){if(lab[s0]||!on(s0))continue;nl++;let sp=0,mnx=w,mxx=0,mny=h,mxy=0,touch=false,cnt=0;stk[sp++]=s0;lab[s0]=nl;const pix=[];
+     while(sp){const i=stk[--sp];pix.push(i);cnt++;const x=i%w,y=(i-x)/w;if(x<mnx)mnx=x;if(x>mxx)mxx=x;if(y<mny)mny=y;if(y>mxy)mxy=y;if(x<=1||y<=1||x>=w-2||y>=h-2)touch=true;
+       for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;const j=ny*w+nx;if(!lab[j]&&on(j)){lab[j]=nl;stk[sp++]=j;}}}
+     const bw=(mxx-mnx+1)/w,bh=(mxy-mny+1)/h;const frame=touch&&((bw>=0.85&&bh>=0.85)||(bw>=0.9&&bh<=0.08)||(bh>=0.9&&bw<=0.08));
+     if(frame)for(const i of pix){d[i*4+3]=0;}}
+   /* بقايا شبه شفافة بجوار الإطار المحذوف */
+   for(let i=0;i<w*h;i++){if(d[i*4+3]>0&&d[i*4+3]<=60)d[i*4+3]=0;}}
+  /* قصّ الحواف الفارغة */
+  const rc=new Uint32Array(h),cc=new Uint32Array(w);for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(d[(y*w+x)*4+3]>60){rc[y]++;cc[x]++;}}
+  let y0=0,y1=h-1,x0=0,x1=w-1;while(y0<h&&rc[y0]<2)y0++;while(y1>y0&&rc[y1]<2)y1--;while(x0<w&&cc[x0]<2)x0++;while(x1>x0&&cc[x1]<2)x1--;
+  if(y0>=y1||x0>=x1)return res(src);
+  const pad=3;x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(w-1,x1+pad);y1=Math.min(h-1,y1+pad);
+  cx.putImageData(id,0,0);const cw=x1-x0+1,ch=y1-y0+1;const o=document.createElement('canvas');o.width=cw;o.height=ch;o.getContext('2d').drawImage(cv,x0,y0,cw,ch,0,0,cw,ch);res(o.toDataURL('image/png'));
+ }catch(e){res(src);}};im.src=src;});}
+async function refreshExtAssets(){try{for(const r of (S.extdocs||[])){if(!r.file_id||extCache[r.file_id])continue;if(!['stamp','signature','letterhead'].includes(r.kind))continue;const f=await api.file.get(r.file_id);if(f&&/^image\/(png|jpeg|webp)$/.test(f.mime)){const raw=du(f.mime,f.data);extCache[r.file_id]=r.kind==='letterhead'?raw:await cleanImg(raw);}}}catch(e){}}
+/* بعد كل تحميل للبيانات نجهّز صور الختم والتوقيع في الذاكرة حتى تدخل تلقائياً في الخطابات */
+(function(){const l=DB.load;DB.load=async function(){const r=await l.apply(this,arguments);refreshExtAssets();return r;};})();
+/* إضافة الختم والتوقيع تلقائياً على مطبوعات البرنامج (لو فعّلها المستخدم من قسم الطباعة العامة) */
+function withAutoStamp(body){if(window.__noAutoStamp)return body;const sg=extRow('signature'),st=extRow('stamp');const sgU=sg&&sg.dest==='auto'?extImg('signature'):'';const stU=st&&st.dest==='auto'?extImg('stamp'):'';if(!sgU&&!stU)return body;
+  return body+`<div style="display:flex;gap:24px;align-items:flex-end;margin-top:18px;page-break-inside:avoid">${sgU?`<img src="${sgU}" style="max-height:30mm;max-width:60mm">`:''}${stU?`<img src="${stU}" style="max-height:38mm;max-width:50mm">`:''}</div>`;}
+const _letterShell0=letterShell;letterShell=function(body,landscape){return _letterShell0(withAutoStamp(String(body)),landscape);};
+
+/* ---------- PDF → صور (pdf.js محلي) ---------- */
+let pdfjsReady=null;
+function loadPdfJs(){if(window.pdfjsLib)return Promise.resolve();if(pdfjsReady)return pdfjsReady;pdfjsReady=new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/pdf.min.js';s.onload=()=>{try{pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdf.worker.min.js';res();}catch(e){rej(e);}};s.onerror=()=>{pdfjsReady=null;rej(new Error('pdfjs-load'));};document.head.appendChild(s);});return pdfjsReady;}
+async function pdfToPages(b64){await loadPdfJs();const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const doc=await pdfjsLib.getDocument({data:bin}).promise;const out=[];const n=Math.min(doc.numPages,30);for(let i=1;i<=n;i++){const pg=await doc.getPage(i);const vp=pg.getViewport({scale:1.7});const cv=document.createElement('canvas');cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;out.push(cv.toDataURL('image/jpeg',0.92));}return out;}
+const imgDims=src=>new Promise(r=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>r({w:210,h:297});i.src=src;});
+async function prSetSource(raw,fileId){prCur.name=raw.name;prCur.mime=raw.mime;prCur.raw=raw;prCur.fileId=fileId||null;prCur.pages=raw.mime==='application/pdf'?await pdfToPages(raw.data):[du(raw.mime,raw.data)];const d=await imgDims(prCur.pages[0]);prCur.land=d.w>d.h*1.05;prItems={};prSel=null;prOpt.pv=0;}
+async function prPickFile(){await withBusy(async()=>{let f;try{f=await filePick();}catch(e){toast(errText(e,{'bad-ext':'نوع الملف غير مدعوم (صورة أو PDF)','too-big':'الملف كبير (الحد 15 ميجا)'}),'err');return;}if(!f)return;try{await prSetSource(f,null);}catch(e){toast('تعذّر فتح الملف: '+(e&&e.message||''),'err');return;}toast(`تم تحميل «${f.name}» (${prCur.pages.length} صفحة)`,'ok');render();});}
+async function prPickSaved(id){if(!id)return;await withBusy(async()=>{const r=(S.extdocs||[]).find(x=>x.id===id);if(!r||!r.file_id)return;const f=await api.file.get(r.file_id);if(!f){toast('الملف غير موجود','err');return;}try{await prSetSource({name:f.name||r.title||'ورقة',mime:f.mime,data:f.data},r.file_id);}catch(e){toast('تعذّر فتح الملف','err');return;}render();});}
+function prClear(){prCur={name:'',mime:'',pages:[],raw:null,land:false,fileId:null};prItems={};prSel=null;render();}
+
+/* ---------- بناء صفحة الطباعة ---------- */
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function prOverlays(i){const its=prItems[i]||[];return its.map(it=>{const u=extImg(it.k==='sig'?'signature':'stamp',it.aid);return u?`<img class="ov" src="${u}" style="left:${+it.x}%;top:${+it.y}%;width:${+it.w}%">`:'';}).join('');}
+function prAsIsHTML(){const land=prCur.land,W=land?297:210,H=land?210:297,n=prCur.pages.length;const pages=prCur.pages.filter(p=>SAFE_IMG.test(p));
+  return `<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'"><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;padding:0}.pg{width:${W}mm;height:${H}mm;position:relative;overflow:hidden;page-break-after:always;background:#fff}.pg:last-child{page-break-after:auto}.bg{width:100%;height:100%;object-fit:contain;display:block}.ov{position:absolute}</style></head><body>${pages.map((src,i)=>`<div class="pg"><img class="bg" src="${src}">${prOverlays(i,n)}</div>`).join('')}</body></html>`;}
+function prLetterHTML(){const bg=prCur.pages[0]&&SAFE_IMG.test(prCur.pages[0])?prCur.pages[0]:'';const st=S.settings;const o=prOpt;
+  const paras=String(o.text||'').split(/\n/).map(l=>l.trim()?`<p style="margin:0 0 8px;white-space:pre-wrap">${esc(l)}</p>`:'<p style="margin:0 0 8px">&nbsp;</p>').join('');
+  const sgU=o.sigOn?extImg('signature',o.sigId):'',stU=o.stampOn?extImg('stamp',o.stampId):'';
+  const body=(o.title?`<h2 style="text-align:center;text-decoration:underline">${esc(o.title)}</h2>`:'')+(o.dateOn?`<p>التاريخ: ${fmtDate(iso(today()))}</p>`:'')+paras+`<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;page-break-inside:avoid"><div>${esc(st.signer||'')}<br>${esc(st.signerTitle||'')}</div><div style="display:flex;gap:18px;align-items:flex-end">${sgU?`<img src="${sgU}" style="max-height:30mm;max-width:60mm">`:''}${stU?`<img src="${stU}" style="max-height:38mm;max-width:50mm">`:''}</div></div>`;
+  const bak=S.settings;window.__noAutoStamp=true;try{S.settings={...bak,letterheadImg:bg,useLetterheadImg:!!bg,letterheadMode:'full',letterheadMargins:{top:+o.top||38,bottom:+o.bottom||30,side:+o.side||18}};return letterShell(body);}finally{S.settings=bak;window.__noAutoStamp=false;}}
+async function prPrint(){if(prOpt.mode==='letter'){if(!String(prOpt.text||'').trim()&&!prOpt.title){toast('اكتب نص الخطاب أولاً','err');return;}}else if(!prCur.pages.length){toast('اختر ورقة أولاً','err');return;}
+  await withBusy(async()=>{try{await doPrint(prOpt.mode==='letter'?prLetterHTML():prAsIsHTML());toast('أُرسلت للطباعة','ok');}catch(e){toast('تعذّرت الطباعة','err');}});}
+async function prSavePDF(){if(prOpt.mode==='letter'){if(!String(prOpt.text||'').trim()&&!prOpt.title){toast('اكتب نص الخطاب أولاً','err');return;}}else if(!prCur.pages.length){toast('اختر ورقة أولاً','err');return;}
+  await withBusy(async()=>{try{const nm=((prCur.name||'مستند').replace(/\.[^.]+$/,'')+(prOpt.mode==='letter'?'':' (مختوم)')).replace(/[\\/:*?"<>|]/g,'-')+'.pdf';const p=window.__testSavePDF?await window.__testSavePDF(prOpt.mode==='letter'?prLetterHTML():prAsIsHTML(),nm):await api.printPDF(prOpt.mode==='letter'?prLetterHTML():prAsIsHTML(),nm,{css:true});if(p)toast('تم حفظ الملف: '+p,'ok');}catch(e){toast('تعذّر الحفظ','err');}});}
+async function prArchive(kind){if(!prCur.raw){toast('اختر ورقة أولاً','err');return;}await withBusy(async()=>{const id=uid();const bin=Uint8Array.from(atob(prCur.raw.data),c=>c.charCodeAt(0));await api.file.save(id,prCur.raw.name,prCur.raw.mime,bin.buffer);const r=await DB.upsert('extdocs',{id:uid(),kind:kind||'paper',title:prCur.raw.name.replace(/\.[^.]+$/,''),date:iso(today()),mime:prCur.raw.mime,file_id:id,file_name:prCur.raw.name,by_name:(S.session&&S.session.name)||''});prCur.fileId=id;toast('تم الحفظ في الأوراق الخارجية','ok');render();return r;});}
+
+/* ---------- المعاينة مع سحب الختم والتوقيع بالماوس ---------- */
+const prHas=k=>!!extImg(k==='sig'?'signature':'stamp');
+function prAddItem(k,pg,aid){const i=pg===undefined?prOpt.pv:pg;if(!prHas(k)){toast(k==='sig'?'ارفع توقيع المدير العام أولاً':'ارفع ختم الشركة أولاً','err');return null;}const l=prOpt.last[k]||{x:50,y:70};const it={k,aid:aid||(extRow(k==='sig'?'signature':'stamp')||{}).id,x:l.x,y:l.y,w:k==='sig'?+prOpt.sigW:+prOpt.stampW};(prItems[i]=prItems[i]||[]).push(it);prSel={p:i,i:prItems[i].length-1};return it;}
+function prAdd(k){const kind=k==='sig'?'signature':'stamp';const rows=extRows(kind).filter(r=>extImg(kind,r.id));if(!rows.length){toast(k==='sig'?'ارفع توقيعاً أولاً':'ارفع ختماً أولاً','err');return;}
+  if(rows.length===1){if(prAddItem(k,undefined,rows[0].id))render();return;}
+  openModal(k==='sig'?'اختر التوقيع':'اختر الختم',`<p class="mini muted">اضغط على الاسم المطلوب:</p><div class="grid g2">${rows.map(r=>`<button class="btn" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;height:auto" onclick="prPickAsset('${k}','${r.id}')"><span style="background:repeating-conic-gradient(#f3f3f3 0 25%,#fff 0 50%) 0 0/12px 12px;border-radius:6px;padding:4px;display:block"><img src="${extImg(kind,r.id)}" style="max-height:70px;max-width:140px;display:block"></span><b>${esc(r.title||'')}</b></button>`).join('')}</div>`,`<button class="btn" onclick="closeModal()">إلغاء</button>`);}
+function prPickAsset(k,id){closeModal();if(prAddItem(k,undefined,id))render();}
+function prDelSel(){if(!prSel)return;const l=prItems[prSel.p];if(l){l.splice(prSel.i,1);if(!l.length)delete prItems[prSel.p];}prSel=null;render();}
+function prClearPage(){delete prItems[prOpt.pv];prSel=null;render();}
+function prCopyAll(){const src=prItems[prOpt.pv]||[];if(!src.length){toast('ضع ختماً أو توقيعاً على هذه الصفحة أولاً','err');return;}for(let i=0;i<prCur.pages.length;i++){if(i===prOpt.pv)continue;prItems[i]=src.map(x=>({...x}));}toast('تم تطبيق نفس المواضع على كل الصفحات','ok');render();}
+function prCopyTo(where){const src=prItems[prOpt.pv]||[];if(!src.length){toast('ضع ختماً أو توقيعاً على هذه الصفحة أولاً','err');return;}const n=prCur.pages.length;for(let i=0;i<n;i++){if(i===prOpt.pv)continue;if(where==='rest'&&i>prOpt.pv||where==='all'){prItems[i]=src.map(x=>({...x}));}}render();}
+function prSelSize(v){if(!prSel)return;const it=(prItems[prSel.p]||[])[prSel.i];if(!it)return;it.w=+v;if(it.k==='sig')prOpt.sigW=+v;else prOpt.stampW=+v;prSave();render();}
+function prGoPage(i){prOpt.pv=clamp(i,0,Math.max(0,prCur.pages.length-1));prSel=null;render();}
+const prCount=()=>Object.values(prItems).reduce((s,a)=>s+a.length,0);
+function prStage(){const n=prCur.pages.length;const i=clamp(prOpt.pv,0,Math.max(0,n-1));const src=prCur.pages[i];if(!src)return `<div class="empty">${LANG==='en'?'Choose a document from device (photo or PDF) or from saved papers':'اختر ورقة من الجهاز (صورة أو PDF) أو من الأوراق المحفوظة'}</div>`;
+  const w=prCur.land?600:440;const its=prItems[i]||[];const sel=prSel&&prSel.p===i?prItems[i][prSel.i]:null;
+  const thumbs=n>1?`<div style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px">${prCur.pages.map((pg,k)=>`<div onclick="prGoPage(${k})" style="cursor:pointer;flex:0 0 auto;position:relative;border:2px solid ${k===i?'var(--accent,#12B5A6)':'transparent'};border-radius:4px"><img src="${pg}" style="height:64px;display:block;border-radius:3px"><span style="position:absolute;bottom:2px;left:2px;background:#000a;color:#fff;font-size:10px;padding:0 4px;border-radius:3px">${k+1}</span>${(prItems[k]||[]).length?`<span style="position:absolute;top:2px;right:2px;background:#12B5A6;color:#fff;font-size:10px;padding:0 4px;border-radius:8px">${prItems[k].length}</span>`:''}</div>`).join('')}</div>`:'';
+  return `${thumbs}<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap"><button class="btn sm" onclick="prGoPage(${i-1})" ${i<=0?'disabled':''}>‹ السابقة</button><b class="mini">صفحة ${i+1} من ${n}</b><button class="btn sm" onclick="prGoPage(${i+1})" ${i>=n-1?'disabled':''}>التالية ›</button>
+  <button class="btn sm primary" onclick="prAdd('stamp')">➕ ختم هنا</button><button class="btn sm primary" onclick="prAdd('sig')">➕ توقيع هنا</button>${its.length?'<button class="btn sm danger" onclick="prClearPage()">🗑 مسح علامات الصفحة</button>':''}</div>
+  <div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap">${its.length&&n>1?`<button class="btn sm" onclick="prCopyAll()">📋 نفس المواضع على كل الصفحات</button><button class="btn sm" onclick="prCopyTo('rest')">⏭ على الصفحات التالية فقط</button>`:''}${sel?`<span class="mini">المحدد (${sel.k==='sig'?'توقيع':'ختم'}):</span><input type="range" min="6" max="60" value="${sel.w}" onchange="prSelSize(this.value)"><button class="btn sm danger" onclick="prDelSel()">✕ حذفه</button>`:''}<span class="muted mini">اسحب بالماوس لتحريك الختم أو التوقيع — اضغط عليه لتحديده</span></div>
+  <div id="prStage" style="position:relative;width:${w}px;max-width:100%;aspect-ratio:${prCur.land?'297/210':'210/297'};background:#fff;border:1px solid var(--line,#ccc);border-radius:6px;overflow:hidden;user-select:none;touch-action:none"><img src="${src}" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">
+  ${its.map((it,k)=>{const u=extImg(it.k==='sig'?'signature':'stamp',it.aid);const on=prSel&&prSel.p===i&&prSel.i===k;return u?`<img class="prdrag" data-i="${k}" src="${u}" style="position:absolute;left:${+it.x}%;top:${+it.y}%;width:${+it.w}%;cursor:move;outline:${on?'2px solid #e11':'1px dashed #12B5A6'}">`:'';}).join('')}</div>
+  <p class="muted mini" style="margin-top:6px">علامات موضوعة: <b>${prCount()}</b> على ${Object.keys(prItems).length} صفحة</p>`;}
+function prBindDrag(){const stage=document.getElementById('prStage');if(!stage)return;stage.querySelectorAll('.prdrag').forEach(el=>{el.onpointerdown=ev=>{ev.preventDefault();const k=+el.dataset.i;const it=(prItems[prOpt.pv]||[])[k];if(!it)return;prSel={p:prOpt.pv,i:k};const r=stage.getBoundingClientRect();const sx=ev.clientX,sy=ev.clientY,ox=+it.x,oy=+it.y;let moved=false;stage.querySelectorAll('.prdrag').forEach(x=>x.style.outline=(+x.dataset.i===k)?'2px solid #e11':'1px dashed #12B5A6');el.setPointerCapture(ev.pointerId);el.onpointermove=e=>{moved=true;it.x=clamp(ox+(e.clientX-sx)/r.width*100,0,98);it.y=clamp(oy+(e.clientY-sy)/r.height*100,0,98);el.style.left=it.x+'%';el.style.top=it.y+'%';};el.onpointerup=()=>{el.onpointermove=null;el.onpointerup=null;prOpt.last[it.k]={x:it.x,y:it.y};prSave();render();};};});}
+const prSet=(k,v)=>{prOpt[k]=v;prSave();render();};
+
+/* ---------- الصفحة ---------- */
+const PR_TABS=[['print','🖨️ طباعة ورقة'],['assets','🖋 الختم والتوقيع'],['archive','🗂 الأوراق الخارجية'],['dist','🧠 توزيع تلقائي']];
+function renderPrint(){setTimeout(()=>{if(!window.__prLoaded){window.__prLoaded=true;refreshExtAssets().then(()=>{if(current.page==='print')render();});}prBindDrag();},0);
+  return `<div class="tabs" style="margin-bottom:12px">${PR_TABS.map(([k,l])=>`<button class="tab ${prTab===k?'active':''}" onclick="prTab='${k}';render()">${l}</button>`).join('')}</div>`+(prTab==='assets'?prAssetsTab():prTab==='archive'?prArchiveTab():prTab==='dist'?prDistTab():prPrintTab());}
+function prSavedOptions(){return (S.extdocs||[]).filter(x=>!['stamp','signature'].includes(x.kind)).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map(x=>`<option value="${x.id}">${esc(PR_KINDS[x.kind]||x.kind)} — ${esc(x.title||x.file_name||'')}</option>`).join('');}
+const prSelAsset=(kind,key)=>{const rs=extRows(kind).filter(r=>extImg(kind,r.id));if(rs.length<2)return '';const cur=(extRow(kind,prOpt[key])||{}).id;return `<select onchange="prSet('${key}',this.value)" style="margin-inline-start:4px">${rs.map(r=>`<option value="${r.id}" ${r.id===cur?'selected':''}>${esc(r.title||'')}</option>`).join('')}</select>`;};
+function prPrintTab(){const o=prOpt;const hasSt=!!extImg('stamp'),hasSg=!!extImg('signature');const lh=(S.extdocs||[]).filter(x=>x.kind==='letterhead');
+  return `<div class="grid g2" style="align-items:start"><div class="card"><h3 style="margin-top:0">1) اختر الورقة</h3>
+  <div class="toolbar"><button class="btn primary" onclick="prPickFile()">📂 ورقة من الجهاز (صورة / PDF / سكان)</button>${prCur.pages.length?'<button class="btn" onclick="prClear()">✕ إزالة</button>':''}</div>
+  <div class="field" style="margin-top:10px"><label>أو من الأوراق المحفوظة</label><select onchange="prPickSaved(this.value)"><option value="">— اختر —</option>${prSavedOptions()}</select></div>
+  ${prCur.pages.length?`<p class="mini muted">الورقة الحالية: <b>${esc(prCur.name)}</b> — ${prCur.pages.length} صفحة ${prCur.fileId?'· محفوظة':''}</p>${prCur.fileId?'':`<div class="toolbar"><select id="pr_k">${Object.entries(PR_KINDS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="btn sm" onclick="prArchive($('#pr_k').value)">💾 احفظها في الأوراق الخارجية</button></div>`}`:''}
+  <h3>2) طريقة الطباعة</h3>
+  <div class="toolbar"><label class="chip ${o.mode==='asis'?'on':''}" onclick="prSet('mode','asis')">🖨️ اطبع الورقة كما هي</label><label class="chip ${o.mode==='letter'?'on':''}" onclick="prSet('mode','letter')">✍️ اكتب نصاً على الورقة (ليتر هيد)</label></div>
+  ${o.mode==='letter'?`<p class="mini muted">الورقة المختارة تُستخدم <b>كخلفية ليتر هيد</b> (أول صفحة). لو لم تختر ورقة تُطبع بترويسة الشركة المعتادة.</p>
+  ${lh.length?`<div class="field"><label>ليتر هيد محفوظ</label><select onchange="prPickSaved(this.value)"><option value="">— اختر —</option>${lh.map(x=>`<option value="${x.id}">${esc(x.title||x.file_name||'')}</option>`).join('')}</select></div>`:''}
+  <div class="field"><label>العنوان</label><input value="${esc(o.title)}" oninput="prOpt.title=this.value"></div><div class="field"><label>النص</label><textarea rows="9" oninput="prOpt.text=this.value" placeholder="اكتب نص الخطاب هنا…">${esc(o.text)}</textarea></div>
+  <div class="frow3"><div class="field"><label>هامش علوي (مم)</label><input type="number" value="${o.top}" onchange="prSet('top',+this.value)" dir="ltr"></div><div class="field"><label>هامش سفلي (مم)</label><input type="number" value="${o.bottom}" onchange="prSet('bottom',+this.value)" dir="ltr"></div><div class="field"><label>هامش جانبي (مم)</label><input type="number" value="${o.side}" onchange="prSet('side',+this.value)" dir="ltr"></div></div>
+  <label class="mini"><input type="checkbox" ${o.dateOn?'checked':''} onchange="prSet('dateOn',this.checked)"> إضافة التاريخ</label>`:''}
+  <h3>3) الختم والتوقيع ${o.mode==='letter'?'(يُضاف في نهاية الخطاب)':''}</h3>
+  <div class="toolbar"><label class="mini"><input type="checkbox" ${o.stampOn?'checked':''} ${hasSt?'':'disabled'} onchange="prSet('stampOn',this.checked)"> ختم ${hasSt?'':'<span class="badge b-warn">لم يُرفع</span>'}</label>${prSelAsset('stamp','stampId')}<label class="mini"><input type="checkbox" ${o.sigOn?'checked':''} ${hasSg?'':'disabled'} onchange="prSet('sigOn',this.checked)"> توقيع ${hasSg?'':'<span class="badge b-warn">لم يُرفع</span>'}</label>${prSelAsset('signature','sigId')}${(hasSt||hasSg)?'':'<button class="btn sm" onclick="prTab=\'assets\';render()">رفعهما الآن</button>'}</div>
+  ${o.mode==='asis'?`<p class="mini muted">${LANG==='en'?'From the preview on the right: choose the page, click "➕ Stamp here" or "➕ Sign here", then drag them to position. Each page has its own placements, and you can replicate the same positions to all pages with one button.':'من المعاينة على اليمين: اختر الصفحة، اضغط «➕ ختم هنا» أو «➕ توقيع هنا»، ثم اسحبهما لمكانهما. كل صفحة لها مواضعها الخاصة، ويمكنك تكرار نفس المواضع على كل الصفحات بزر واحد.'}</p>`:''}
+  <div class="toolbar" style="margin-top:12px"><button class="btn primary" onclick="prPrint()">🖨️ طباعة</button><button class="btn" onclick="prSavePDF()">💾 حفظ كملف PDF</button></div></div>
+  <div class="card"><h3 style="margin-top:0">${o.mode==='letter'?'الخلفية (معاينة)':'معاينة'}</h3>${o.mode==='letter'?(prCur.pages[0]?`<img src="${prCur.pages[0]}" style="max-width:100%;border:1px solid var(--line,#ccc);border-radius:6px">`:'<div class="empty">لا توجد خلفية — ستُطبع ترويسة الشركة المعتادة</div>'):prStage()}</div></div>`;}
+
+/* ---------- الختم والتوقيع ---------- */
+function prAssetGroup(kind,title,hint,addLbl){const rows=extRows(kind);const chk='background:repeating-conic-gradient(#f3f3f3 0 25%,#fff 0 50%) 0 0/16px 16px';
+  return `<div class="card"><h3 style="margin-top:0">${title}</h3><p class="mini muted">${hint}</p>
+  ${rows.length?rows.map(r=>{const img=extImg(kind,r.id);return `<div style="border:1px solid var(--line,#ddd);border-radius:8px;padding:8px;margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px"><b>${esc(r.title||'')}</b><span class="toolbar"><button class="btn sm" onclick="prRenameAsset('${r.id}')">✏️ الاسم</button><button class="btn sm" onclick="prUploadAsset('${kind}','${r.id}')">📎 استبدال</button><button class="btn sm danger" onclick="prRemoveAsset('${r.id}')">🗑 إزالة</button></span></div>
+  <div style="min-height:90px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line,#bbb);border-radius:8px;${chk};padding:8px">${img?`<img src="${img}" style="max-height:130px;max-width:100%">`:'<span class="muted">جارٍ التحميل…</span>'}</div>
+  <label class="mini" style="display:block;margin-top:6px"><input type="checkbox" ${r.dest==='auto'?'checked':''} onchange="prAutoAsset('${r.id}',this.checked)"> إضافته <b>تلقائياً</b> في أسفل كل خطاب ومطبوع يخرج من البرنامج</label></div>`;}).join(''):'<div class="empty" style="margin-bottom:8px">لم يُرفع بعد</div>'}
+  <button class="btn primary" onclick="prUploadAsset('${kind}')">➕ ${addLbl}</button></div>`;}
+function prAssetsTab(){return `<p class="mini muted" style="margin:0 0 10px">ارفع أي عدد من الأختام والتواقيع وسمِّ كلاً منها. عند الاستخدام يُطلب منك اختيار الاسم المطلوب. الخلفية والإطار حول الصورة <b>تُزال تلقائياً</b> عند الرفع، ويفضَّل التصوير على ورقة بيضاء بإضاءة جيدة.</p><div class="grid g2">${prAssetGroup('stamp','🔴 الأختام','يمكن لأي موظف رفعها أو استبدالها (تظهر العملية في «المراجعة النهائية» لدى المدير).','إضافة ختم جديد')}${prAssetGroup('signature','✒️ التواقيع','صورة التوقيع بخط واضح على ورقة بيضاء. يُدمج مع الورقة عند الطباعة.','إضافة توقيع جديد')}</div>`;}
+async function prUploadAsset(kind,id){const old=id?(S.extdocs||[]).find(x=>x.id===id):null;let name='';
+  if(!old){const lbl=kind==='stamp'?'الختم':'التوقيع';const n=await promptBox('اسم '+lbl+' الجديد','اكتب اسماً تميّزه به (مثال: '+(kind==='stamp'?'ختم الشركة':'توقيع المدير العام')+')','text');if(n===null)return;name=String(n).trim()||(lbl+' '+(extRows(kind).length+1));}
+  await withBusy(async()=>{let f;try{f=await filePick(true);}catch(e){toast(errText(e,{'bad-ext':'اختر صورة PNG أو JPG','too-big':'الصورة كبيرة'}),'err');return;}if(!f)return;
+  let mime=f.mime,data=f.data;try{const c=await cleanImg(du(f.mime,f.data));const m=/^data:image\/png;base64,(.+)$/.exec(c);if(m){mime='image/png';data=m[1];}}catch(e){}
+  const fid=uid();const bin=Uint8Array.from(atob(data),c=>c.charCodeAt(0));await api.file.save(fid,f.name,mime,bin.buffer);
+  await DB.upsert('extdocs',{...(old||{}),id:old?old.id:uid(),kind,title:old?old.title:name,mime,file_id:fid,file_name:f.name,date:iso(today()),by_name:(S.session&&S.session.name)||''});
+  if(old&&old.file_id){try{await api.file.delete(old.file_id);}catch(e){}delete extCache[old.file_id];}await refreshExtAssets();toast('تم الحفظ — أُزيلت الخلفية تلقائياً','ok');render();});}
+async function prRenameAsset(id){const r=(S.extdocs||[]).find(x=>x.id===id);if(!r)return;const n=await promptBox('إعادة تسمية','الاسم الجديد (الحالي: '+(r.title||'')+')','text');if(n===null||!String(n).trim())return;await DB.upsert('extdocs',{...r,title:String(n).trim()});toast('تم تغيير الاسم','ok');render();}
+async function prRemoveAsset(id){const r=(S.extdocs||[]).find(x=>x.id===id);if(!r)return;if(!await confirmBox('إزالة «'+(r.title||'')+'»؟','إزالة'))return;await withBusy(async()=>{try{await DB.remove('extdocs',r.id);}catch(e){if(!/cancel/i.test(String(e&&e.message)))toast(errText(e),'err');}render();});}
+async function prAutoAsset(id,on){const r=(S.extdocs||[]).find(x=>x.id===id);if(!r)return;if(on){for(const o of extRows(r.kind)){if(o.id!==r.id&&o.dest==='auto')await DB.upsert('extdocs',{...o,dest:''});}}await DB.upsert('extdocs',{...r,dest:on?'auto':''});toast(on?'سيُضاف تلقائياً على المطبوعات':'تم إيقاف الإضافة التلقائية','ok');render();}
+
+/* ---------- الأوراق الخارجية (بعيداً عن قيد الخزينة) ---------- */
+let prKindF='',prQ='';
+function prArchiveTab(){const list=(S.extdocs||[]).filter(x=>!['stamp','signature'].includes(x.kind)&&(!prKindF||x.kind===prKindF)&&(!prQ||[x.title,x.note,x.file_name,x.by_name].join(' ').toLowerCase().includes(prQ.toLowerCase()))).sort((a,b)=>String(b.date||b.created_at||'').localeCompare(String(a.date||a.created_at||'')));
+  return `<div class="card tight"><div class="card-head"><div class="toolbar"><input class="search" placeholder="🔍 بحث" value="${esc(prQ)}" oninput="prQ=this.value;render()"><select class="search" onchange="prKindF=this.value;render()"><option value="">كل الأنواع</option>${Object.entries(PR_KINDS).map(([k,v])=>`<option value="${k}" ${prKindF===k?'selected':''}>${v}</option>`).join('')}</select></div><div class="toolbar"><button class="btn primary" onclick="openExtDocForm()">＋ رفع ورقة / فاتورة / شيك</button></div></div>
+  <p class="muted mini" style="margin:0 14px 10px">هنا تُحفظ الأوراق والفواتير والشيكات والكشوف الخارجية <b>كأرشيف فقط</b> — لا تدخل الخزينة ولا الحسابات إلا لو طلبت توزيعها من تبويب «توزيع تلقائي».</p>
+  <div class="table-wrap">${list.length?`<table><thead><tr><th>التاريخ</th><th>النوع</th><th>العنوان</th><th>المبلغ</th><th>ملاحظة</th><th>رفعها</th><th>التوزيع</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td>${fmtDate(x.date||String(x.created_at||'').slice(0,10))}</td><td><span class="badge b-info">${esc(PR_KINDS[x.kind]||x.kind)}</span></td><td><b>${esc(x.title||x.file_name||'')}</b></td><td class="num">${x.amount?money(x.amount,x.currency||'AED'):'—'}</td><td class="mini">${esc(x.note||'')}</td><td class="mini">${esc(x.by_name||'')}</td><td class="mini">${x.dest&&x.dest!=='auto'?'✅ '+esc(x.dest):'<span class="muted">أرشيف فقط</span>'}</td><td style="white-space:nowrap">${x.file_id?`<button class="btn sm" onclick="viewFile('${x.file_id}')">👁 عرض</button> <button class="btn sm" onclick="prUse('${x.id}','print')">🖨️</button> <button class="btn sm" onclick="prUse('${x.id}','dist')">🧠</button> `:''}<button class="btn sm danger" onclick="delExtDoc('${x.id}')">✕</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">لا توجد أوراق — اضغط «رفع»</div>'}</div></div>`;}
+function openExtDocForm(){pendingFile=null;openModal('رفع ورقة خارجية',`<div class="frow3"><div class="field"><label>النوع</label><select id="xd_kind">${Object.entries(PR_KINDS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div><div class="field"><label>التاريخ</label><input type="date" id="xd_date" value="${iso(today())}"></div><div class="field"><label>المبلغ <span class="muted mini">(اختياري)</span></label><input type="number" step="0.01" id="xd_amt" dir="ltr"></div></div><div class="frow"><div class="field"><label>العنوان / الوصف *</label><input id="xd_title" placeholder="مثال: فاتورة مورد الأسمنت"></div><div class="field"><label>العملة</label><select id="xd_cur"><option>AED</option><option>USD</option></select></div></div><div class="field"><label>ملاحظة</label><input id="xd_note"></div><div class="field"><label>الملف (سكان / صورة / PDF) *</label><div class="toolbar"><button class="btn" onclick="pickAnyFile('xd_file')">📎 اختيار</button><span id="xd_file" class="muted mini">لم يتم اختيار ملف</span></div></div>`,`<button class="btn primary" onclick="saveExtDoc()">حفظ</button><button class="btn" onclick="closeModal()">إلغاء</button>`);}
+async function saveExtDoc(){if(!pendingFile){toast('اختر الملف','err');return;}if(!fv('xd_title')){toast('اكتب عنواناً','err');if(window.shakeField)shakeField('xd_title');return;}return withBusy(async()=>{const mime=pendingFile.mime;const f=await saveFilePending();await DB.upsert('extdocs',{id:uid(),kind:fv('xd_kind'),title:fv('xd_title'),note:fv('xd_note'),date:fv('xd_date')||iso(today()),amount:fn('xd_amt')||null,currency:fv('xd_cur'),mime,by_name:(S.session&&S.session.name)||'',...f});closeModal();toast('تم الحفظ','ok');render();});}
+async function delExtDoc(id){if(!await confirmBox('حذف هذه الورقة من الأرشيف؟','حذف'))return;try{await DB.remove('extdocs',id);}catch(e){if(!/cancel/i.test(String(e&&e.message)))toast(errText(e),'err');}render();}
+async function prUse(id,tab){prTab=tab;if(tab==='dist'){dsSrc=id;render();return;}await prPickSaved(id);render();}
+
+/* ---------- توزيع تلقائي: «حط المبلغ ده في القيد كذا» ---------- */
+let dsSrc=null,dsText='',dsForm=null;
+const DS_DEST={out:'🧾 سند صرف (الخزينة / البنك)',in:'💰 سند قبض (الخزينة / البنك)',expense:'💸 مصروف',cheque_in:'🧾 شيك مستلم',cheque_out:'🧾 شيك مُصدر',sale:'🧾 فاتورة مبيعات (ضريبة)',purchase:'🛒 فاتورة مشتريات (ضريبة)',employees:'👥 كشف موظفين (استيراد من Excel/CSV)',archive:'🗂 أرشفة فقط'};
+const toLatin=s=>String(s||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/٫/g,'.').replace(/٬/g,',');
+function dsParse(raw){const t0=toLatin(raw);let t=t0;const out={dest:'',date:iso(today()),amount:'',cur:'AED',acct:'main',party:'',cat:'',emp:'',proj:'',desc:''};
+  const dm=t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/)||null;const dm2=t.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/);
+  if(dm){out.date=`${dm[1]}-${dm[2].padStart(2,'0')}-${dm[3].padStart(2,'0')}`;t=t.replace(dm[0],' ');}else if(dm2){out.date=`${dm2[3]}-${dm2[2].padStart(2,'0')}-${dm2[1].padStart(2,'0')}`;t=t.replace(dm2[0],' ');}
+  else if(/امبارح|أمس|امس/.test(t)){const d=new Date();d.setDate(d.getDate()-1);out.date=iso(d);}
+  if(/دولار|usd|\$/i.test(t))out.cur='USD';
+  const am=t.match(/(\d[\d,]*(?:\.\d+)?)/);if(am)out.amount=String(am[1]).replace(/,/g,'');
+  const T=t;const has=re=>re.test(T);
+  if(has(/كشف\s*(ال)?موظفين|قائمة\s*(ال)?موظفين|بيانات\s*(ال)?موظفين|قسم\s*(ال)?موظفين/))out.dest='employees';
+  else if(has(/أرشف|ارشف|احفظ\s*فقط|للأرشيف|للارشيف/))out.dest='archive';
+  else if(has(/شيك/))out.dest=has(/صرف|صادر|مُصدر|مصدر|ندفع|دفع/)?'cheque_out':'cheque_in';
+  else if(has(/فاتورة\s*(ال)?(مبيعات|بيع)|فاتورة\s*ضريبية\s*(ل)?عميل/))out.dest='sale';
+  else if(has(/فاتورة\s*(ال)?(مشتريات|شراء|مورد)|فاتورة\s*مورد/))out.dest='purchase';
+  else if(has(/مصروف|مصاريف|مصروفات/))out.dest='expense';
+  else if(has(/قبض|استلام|استلمنا|إيراد|ايراد|تحصيل|إيداع|ايداع|دخل/))out.dest='in';
+  else if(has(/صرف|دفع|مدفوع|سداد|سدد|خرج|خزن|قيد/))out.dest='out';
+  else out.dest=out.amount?'out':'archive';
+  const accts=Object.entries(ACCOUNTS);const hit=accts.find(([k,n])=>n&&T.includes(n));if(hit)out.acct=hit[0];else if(/بنك|تحويل/.test(T))out.acct=(bankAccts()[0]||{}).key||'bank';else out.acct='main';
+  const emps=[...S.employees].sort((a,b)=>String(b.name).length-String(a.name).length);const e=emps.find(x=>x.name&&T.includes(x.name));if(e)out.emp=e.id;
+  const pr=[...(S.projects||[])].sort((a,b)=>String(b.name).length-String(a.name).length).find(x=>x.name&&T.includes(x.name));if(pr)out.proj=pr.id;
+  const cats=[...(S.settings.expenseCategories||[]),...(S.settings.treasuryOutCats||[]),...(S.settings.treasuryInCats||[])];const c=cats.find(x=>x&&T.includes(x));if(c)out.cat=c;
+  out.desc=raw.replace(/\s+/g,' ').trim().slice(0,200);return out;}
+function dsAnalyze(){dsForm=dsParse(dsText);render();}
+const dsOpts=(obj,sel)=>Object.entries(obj).map(([k,v])=>`<option value="${k}" ${sel===k?'selected':''}>${esc(v)}</option>`).join('');
+function prDistTab(){const src=dsSrc?(S.extdocs||[]).find(x=>x.id===dsSrc):null;const f=dsForm;
+  const ex=['حط المبلغ 500 درهم في الخزنة صرف إيجار المكتب','قيد 1200 مصروفات مواصلات','سند قبض 3000 دفعة من العميل أحمد','شيك مستلم 7500 بنك الإمارات','فاتورة مشتريات 2100 من مورد الحديد','حط كشف الموظفين ده في قسم الموظفين'];
+  return `<div class="grid g2" style="align-items:start"><div class="card"><h3 style="margin-top:0">1) الورقة (اختياري)</h3>
+  <div class="toolbar"><button class="btn primary" onclick="dsUpload()">📂 رفع ورقة جديدة من الجهاز</button></div><div class="field" style="margin-top:8px"><label>أو من الأوراق المحفوظة</label><select onchange="dsSrc=this.value||null;render()"><option value="">— بدون ورقة —</option>${(S.extdocs||[]).filter(x=>!['stamp','signature'].includes(x.kind)&&x.file_id).map(x=>`<option value="${x.id}" ${dsSrc===x.id?'selected':''}>${esc(PR_KINDS[x.kind]||x.kind)} — ${esc(x.title||x.file_name||'')}</option>`).join('')}</select></div>
+  ${src?`<p class="mini">الورقة المختارة: <b>${esc(src.title||src.file_name)}</b> <button class="btn sm" onclick="viewFile('${src.file_id}')">👁</button></p>`:''}
+  <h3>2) قل لي ماذا تفعل بها</h3><textarea rows="4" id="ds_text" placeholder="مثال: حط المبلغ 500 درهم في الخزنة صرف إيجار المكتب" oninput="dsText=this.value">${esc(dsText)}</textarea>
+  <div class="toolbar" style="margin:8px 0">${ex.map(x=>`<span class="chip" onclick="dsText='${x}';dsAnalyze()">${esc(x)}</span>`).join('')}</div>
+  <div class="toolbar"><button class="btn primary" onclick="dsText=$('#ds_text').value;dsAnalyze()">🔍 حلّل</button></div>
+  <p class="muted mini">البرنامج يفهم من جملتك: المبلغ والعملة والتاريخ ونوع القيد والحساب والموظف والمشروع والتصنيف، ويعرضها لك للمراجعة قبل التسجيل. الورقة تُرفق بالقيد تلقائياً.</p></div>
+  <div class="card"><h3 style="margin-top:0">3) راجع وسجّل</h3>${f?`
+  <div class="field"><label>وجهة التسجيل</label><select id="ds_dest" onchange="dsForm.dest=this.value;dsRead();render()">${dsOpts(DS_DEST,f.dest)}</select></div>
+  ${f.dest==='employees'?'<p class="mini">سيُفتح استيراد الموظفين لاختيار ملف Excel/CSV وتوزيعهم في قسم الموظفين.</p>':f.dest==='archive'?'<p class="mini">ستُحفظ الورقة في الأرشيف فقط بدون أي قيد.</p>':`
+  <div class="frow3"><div class="field"><label>التاريخ</label><input type="date" id="ds_date" value="${esc(f.date)}"></div><div class="field"><label>المبلغ</label><input type="number" step="0.01" id="ds_amt" value="${esc(f.amount)}" dir="ltr"></div><div class="field"><label>العملة</label><select id="ds_cur"><option ${f.cur==='AED'?'selected':''}>AED</option><option ${f.cur==='USD'?'selected':''}>USD</option></select></div></div>
+  <div class="frow"><div class="field"><label>الحساب</label><select id="ds_acct">${dsOpts(ACCOUNTS,f.acct)}</select></div><div class="field"><label>التصنيف</label><input id="ds_cat" value="${esc(f.cat)}" placeholder="اختياري"></div></div>
+  <div class="frow"><div class="field"><label>الموظف</label><select id="ds_emp"><option value="">—</option>${S.employees.filter(e=>e.status!=='inactive').map(e=>`<option value="${e.id}" ${f.emp===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div><div class="field"><label>المشروع</label><select id="ds_proj"><option value="">—</option>${(S.projects||[]).map(p=>`<option value="${p.id}" ${f.proj===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div></div>
+  <div class="field"><label>البيان / الجهة</label><input id="ds_desc" value="${esc(f.desc)}"></div>`}
+  <div class="toolbar"><button class="btn ok" onclick="dsExecute()">✅ سجّل في ${esc(DS_DEST[f.dest]||'')}</button></div>`:'<div class="empty">اكتب جملتك واضغط «حلّل»</div>'}</div></div>`;}
+function dsRead(){if(!dsForm||!document.getElementById('ds_date'))return;const g=id=>{const e=document.getElementById(id);return e?e.value:'';};Object.assign(dsForm,{date:g('ds_date')||dsForm.date,amount:g('ds_amt'),cur:g('ds_cur')||dsForm.cur,acct:g('ds_acct')||dsForm.acct,cat:g('ds_cat'),emp:g('ds_emp'),proj:g('ds_proj'),desc:g('ds_desc')});}
+async function dsUpload(){await withBusy(async()=>{let f;try{f=await filePick();}catch(e){toast(errText(e,{'bad-ext':'نوع الملف غير مدعوم','too-big':'الملف كبير'}),'err');return;}if(!f)return;const id=uid();const bin=Uint8Array.from(atob(f.data),c=>c.charCodeAt(0));await api.file.save(id,f.name,f.mime,bin.buffer);const r=await DB.upsert('extdocs',{id:uid(),kind:'paper',title:f.name.replace(/\.[^.]+$/,''),date:iso(today()),mime:f.mime,file_id:id,file_name:f.name,by_name:(S.session&&S.session.name)||''});dsSrc=r.id;toast('تم رفع الورقة','ok');render();});}
+function dsSetSel(id,val){const el=document.getElementById(id);if(!el||!val)return;if(![...el.options].some(o=>o.value===val||o.text===val)){const o=document.createElement('option');o.textContent=val;o.value=val;el.insertBefore(o,el.options[0]);}el.value=val;}
+const dsSet=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined&&v!==null&&v!=='')e.value=v;};
+async function dsExecute(){dsRead();const f=dsForm;if(!f)return;const src=dsSrc?(S.extdocs||[]).find(x=>x.id===dsSrc):null;
+  if(f.dest==='employees'){if(typeof importCSV==='function'){importCSV();}else importCSVDialog();return;}
+  if(f.dest==='archive'){if(!src){toast('اختر ورقة للأرشفة','err');return;}await DB.upsert('extdocs',{...src,note:f.desc||src.note,date:f.date});toast('تمت الأرشفة','ok');render();return;}
+  const amount=+f.amount;if(!(amount>0)){toast('أدخل مبلغاً صحيحاً','err');if(window.shakeField)shakeField('ds_amt');return;}
+  let fileObj=null;if(src&&src.file_id){try{fileObj=await api.file.get(src.file_id);}catch(e){}}
+  const withFile=()=>{pendingFile=fileObj?{name:fileObj.name||src.file_name||'ورقة',mime:fileObj.mime,data:fileObj.data,size:0}:null;};
+  const before={t:S.treasury.length,x:S.expenses.length,c:(S.cheques||[]).length,d:S.taxdocs.length};let kind='';
+  try{
+    if(f.dest==='out'||f.dest==='in'){kind=f.dest==='in'?'سند قبض':'سند صرف';openTreasuryForm(f.dest);withFile();dsSet('t_date',f.date);dsSet('t_acct',f.acct);dsSet('t_amt',amount);dsSet('t_cur',f.cur);dsSet('t_emp',f.emp);dsSet('t_proj',f.proj);dsSet('t_note',f.desc);if(f.cat)dsSetSel('t_cat',f.cat);await saveTreasury(f.dest,'');}
+    else if(f.dest==='expense'){kind='مصروف';openExpenseForm(f.emp||undefined);withFile();dsSet('x_date',f.date);dsSet('x_amt',amount);dsSet('x_cur',f.cur);dsSet('x_emp',f.emp);dsSet('x_proj',f.proj);dsSet('x_desc',f.desc||'مصروف');if(f.cat)dsSetSel('x_cat',f.cat);const sv=f.acct==='main'?'treasury':f.acct;dsSet('x_src',sv);await saveExpense();}
+    else if(f.dest==='cheque_in'||f.dest==='cheque_out'){kind='شيك';openChequeForm();withFile();dsSet('c_kind',f.dest==='cheque_out'?'out':'in');dsSet('c_date',f.date);dsSet('c_amt',amount);dsSet('c_cur',f.cur);dsSet('c_proj',f.proj);dsSet('c_note',f.desc);if(isBankKey(f.acct))dsSet('c_acct',f.acct);await saveCheque('');}
+    else if(f.dest==='sale'||f.dest==='purchase'){kind=f.dest==='sale'?'فاتورة مبيعات':'فاتورة مشتريات';openTaxDoc(f.dest);withFile();dsSet('tx_date',f.date);dsSet('tx_net',(amount/1.05).toFixed(2));dsSet('tx_desc',f.desc);calcTax();await saveTaxDoc(f.dest,'');}
+  }catch(e){toast(errText(e),'err');}
+  const ok=S.treasury.length>before.t||S.expenses.length>before.x||(S.cheques||[]).length>before.c||S.taxdocs.length>before.d;
+  const ov=document.getElementById('overlay');if(ov&&ov.classList.contains('open'))closeModal();
+  if(ok){if(src)await DB.upsert('extdocs',{...src,dest:kind,amount,currency:f.cur,date:f.date,note:src.note||f.desc});dsForm=null;dsText='';toast(`✅ تم تسجيل ${kind}`,'ok');render();}
+  else toast('لم يتم التسجيل — راجع البيانات','err');}
+
+/* ---------- زر الرجوع: اختصارات لوحة المفاتيح والماوس ---------- */
+document.addEventListener('keydown',e=>{if(e.altKey&&e.key==='ArrowLeft'&&!/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||'')){e.preventDefault();if(current.page!=='dashboard')goBack();}});
+document.addEventListener('mouseup',e=>{if(e.button===3){e.preventDefault();if(current.page!=='dashboard')goBack();}});
