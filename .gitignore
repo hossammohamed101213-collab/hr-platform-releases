@@ -1,0 +1,10 @@
+node_modules/
+dist/
+tools/license-private-key.txt
+tools/issued-licenses.log
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; frame-src blob: data:; object-src 'none'; base-uri 'none'; form-action 'none';">
+<title>منصة شؤون الموظفين</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<!-- ====== شاشة القفل ====== -->
+<div id="lock" class="lock">
+  <div class="lock-card">
+    <div class="lock-logo"><img src="logo.png" alt="SEVENGATES"></div>
+    <h1>SEVENGATES · شؤون الموظفين</h1>
+    <p class="muted" id="lockSub">أدخل كلمة المرور لفتح البيانات</p>
+    <div id="lockForm"></div>
+    <p class="lock-lang"><button class="btn sm ghost langBtn" onclick="toggleLang()">English</button></p><p class="mini muted" id="lockDir"></p><p class="mini muted" id="lockVer" dir="ltr"></p><p class="mini" id="lockLic"></p>
+  </div>
+</div>
+
+<!-- ====== التطبيق ====== -->
+<div class="app hidden" id="app">
+  <aside class="side">
+    <div class="brand"><span class="logo"><img src="logo.png" alt=""></span><span><span id="brandName">شؤون الموظفين</span><small id="brandCompany"></small></span></div>
+    <div class="navlist">
+    <button class="nav active" data-page="dashboard"><span class="ic">▦</span>لوحة التحكم</button>
+    <button class="nav" data-page="alerts"><span class="ic">🔔</span>الإشعارات والتنبيهات<span class="cnt hidden" id="navAlertCount"></span></button>
+    <button class="nav" data-page="employees"><span class="ic">👤</span>الموظفون</button>
+    <button class="nav" data-page="finance"><span class="ic">🏦</span>المالية والخزينة<span class="cnt hidden" id="navFinCount"></span></button>
+    <button class="nav" data-page="projects"><span class="ic">🏗️</span>المشروعات</button>
+    <button class="nav" data-page="field"><span class="ic">🚚</span>الميدان والحضور</button>
+    <button class="nav" data-page="taxes"><span class="ic">🧾</span>الضرائب</button>
+    <button class="nav" data-page="letters"><span class="ic">✉️</span>الخطابات والنماذج</button>
+    <button class="nav" data-page="leaves"><span class="ic">🏖️</span>الإجازات</button>
+    <button class="nav" data-page="payroll"><span class="ic">💵</span>الرواتب</button>
+    <button class="nav" data-page="reports"><span class="ic">📈</span>التقارير والتحليلات</button>
+    <button class="nav" data-page="print"><span class="ic">🖨️</span>الطباعة العامة</button>
+    <button class="nav" data-page="me"><span class="ic">🙋</span>بياناتي</button>
+    <button class="nav" data-page="offers"><span class="ic">📨</span>عروض العمل</button>
+    <button class="nav" data-page="documents"><span class="ic">📄</span>المستندات</button>
+    <button class="nav" data-page="guide"><span class="ic">📚</span>دليل الإجراءات</button>
+    <button class="nav" data-page="userhelp"><span class="ic">📖</span>تعليمات المستخدم</button>
+    <button class="nav" data-page="sites"><span class="ic">🌐</span>مواقعنا</button>
+    <button class="nav" data-page="devices"><span class="ic">🖥️</span>الأجهزة والتراخيص</button>
+    <button class="nav" data-page="review"><span class="ic">🧾</span>المراجعة النهائية<span class="cnt hidden" id="navTrashCount"></span></button>
+    <button class="nav" data-page="settings"><span class="ic">⚙️</span>الإعدادات</button>
+    </div>
+    <div class="foot"><div id="whoLine" class="who"></div><div id="syncBadge"></div><div id="licBadge"></div><div id="backupStatus"></div><button class="btn sm" id="btnUpdate" onclick="updateNow()">🔄 تحديث البرنامج</button><button class="btn sm ghost" id="btnLock">🔒 قفل المنصة</button></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px"><button class="btn hidden" id="btnBack" onclick="goBack()" title="رجوع خطوة للخلف (Alt + ←)">→ رجوع</button><button class="btn menuBtn" id="btnSections" onclick="openSectionGrid()" title="الأقسام">☰ الأقسام</button><div><div style="display:flex;align-items:center;gap:8px"><h1 id="pageTitle">لوحة التحكم</h1><button class="btn icon helpBtn" onclick="openSectionHelp()" title="شرح هذا القسم وكيفية استخدامه">؟</button></div><div class="dates" id="todayLine"></div></div></div>
+      <div class="actions">
+        <button class="btn danger" id="btnEmergency" onclick="emergencyBackup()" title="نسخة احتياطية فورية على هذا الجهاز + حفظ تقدّمك">🚨 طوارئ</button>
+        <div class="gsearch"><input id="gsearch" placeholder="ابحث عن أي شيء: موظف، خطاب، إجراء، قسم… (Ctrl+K)"><div class="gresults hidden" id="gresults"></div></div>
+        <div class="hdrctrl">
+          <button class="btn icon" onclick="openAppearance()" title="المظهر والألوان وشكل الشاشة">🎨</button>
+          <button class="btn icon" onclick="openSectionControl()" title="تخصيص الأقسام الظاهرة">🧩</button>
+          <button class="btn icon langBtn" onclick="toggleLang()" title="اللغة">English</button>
+          <button class="btn icon" id="btnSound" onclick="toggleSound()" title="الأصوات">🔔</button>
+          <button class="btn icon" onclick="openSupport()" title="تواصل مع الدعم">🆘</button>
+        </div>
+        <div class="hdrAvatar" id="hdrAvatar" title=""></div><button class="btn" id="btnQuickBackup">💾 نسخة احتياطية</button>
+      </div>
+    </div>
+    <div id="banner"></div>
+    <div id="page"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div class="toasts" id="toasts"></div>
+<script src="vendor/chart.umd.js"></script>
+<script src="i18n_dict.js"></script>
+<script src="i18n.js"></script>
+<script src="theme.js"></script>
+<script src="core.js"></script>
+<script src="pages.js"></script>
+<script src="pages2.js"></script>
+<script src="pages3.js"></script>
+<script src="guide.js"></script>
+<script src="pages4.js"></script>
+<script src="pages5.js"></script>
+<script src="pages6.js"></script>
+<script src="pages7.js"></script>
+<script src="pages8.js"></script>
+<script src="pages9.js"></script>
+<script src="pages10.js"></script>
+<script src="pages11.js"></script>
+<script src="pages12.js"></script>
+<script src="pages13.js"></script>
+<script src="pages14.js"></script>
+<script src="pages15.js"></script>
+<script src="pages16.js"></script>
+<script src="pages17.js"></script>
+<script src="pages18.js"></script>
+<script src="pages19.js"></script>
+<script src="pages20.js"></script>
+<script src="pages21.js"></script>
+<script src="mascot.js"></script>
+<script src="ux.js"></script>
+<script src="reg.js"></script>
+<script src="keys.js"></script>
+<script src="progress.js"></script>
+<script src="boot.js"></script>
+</body>
+</html>

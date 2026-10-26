@@ -1,0 +1,23 @@
+{
+  "seller": "SEVENGATES — البوابات السبع لمقاولات البناء",
+  "website": "https://www.sevengates.online",
+  "whatsapp": "201062101213",
+  "email": "hossam.mohamed101213@gmail.com",
+  "currency": "USD",
+  "plans": [
+    {
+      "id": "lifetime",
+      "title": "ترخيص مدى الحياة",
+      "price": 177,
+      "note": "جهاز واحد · كل التحديثات مجاناً · بلا اشتراك"
+    }
+  ],
+  "bank": {
+    "name": "Emirates NBD",
+    "iban": "AE00 0000 0000 0000 0000 000",
+    "holder": "SEVEN GATES BUILDING CONTRACTING"
+  },
+  "payLink": "",
+  "remoteConfig": "",
+  "claimUrl": ""
+}

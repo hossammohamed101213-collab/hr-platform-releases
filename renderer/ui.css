@@ -1,0 +1,216 @@
+/* ===== 5.9.1 — طبقة التصميم الاحترافية (واجهة التطبيق) ===== */
+body[data-nav="app"]{
+  --ap-bg1:#070B16;--ap-bg2:#0A1022;--ap-surface:#0E1526;--ap-surface2:#121B30;
+  --ap-line:rgba(148,174,222,.14);--ap-line2:rgba(148,174,222,.09);
+  --ap-blue:#5B8CFF;--ap-ink:#F2F5FC;--ap-mute:#8E9BB7;
+  font-variant-numeric:tabular-nums;
+}
+body[data-nav="app"] .app{background:linear-gradient(180deg,var(--ap-bg1),var(--ap-bg2))}
+body[data-nav="app"] #page{color:var(--ap-ink)}
+body[data-nav="app"] h1,body[data-nav="app"] h2,body[data-nav="app"] h3{letter-spacing:-.02em;color:#fff}
+body[data-nav="app"] .muted,body[data-nav="app"] .mini.muted{color:var(--ap-mute)}
+
+/* ---------- الشريط العلوي ---------- */
+body[data-nav="app"] .appbar{padding:10px 28px;background:rgba(7,11,22,.86);border-bottom:1px solid var(--ap-line2)}
+body[data-nav="app"] .abrand{font-size:.98rem;letter-spacing:-.01em}
+body[data-nav="app"] .abrand img{width:30px}
+body[data-nav="app"] .appbar .gsearch input{height:36px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--ap-line2);font-size:.82rem;padding:0 14px}
+body[data-nav="app"] .appbar .gsearch input:focus{border-color:var(--ap-blue);outline:none;box-shadow:0 0 0 3px rgba(91,140,255,.14)}
+body[data-nav="app"] .appbar .btn{height:36px;border-radius:10px;padding:0 12px;font-size:.8rem;font-weight:600;background:rgba(255,255,255,.04);border:1px solid var(--ap-line2);color:var(--ap-ink);display:inline-flex;align-items:center;gap:6px}
+body[data-nav="app"] .appbar .btn:hover{background:rgba(255,255,255,.09);border-color:var(--ap-line)}
+body[data-nav="app"] .appbar .btn.icon{width:36px;padding:0;justify-content:center}
+body[data-nav="app"] .appbar .btn.danger{background:rgba(229,72,77,.1);border-color:rgba(229,72,77,.3);color:#FF9AA2}
+body[data-nav="app"] .appbar .hdrAvatar{width:34px;height:34px;border-radius:10px}
+
+/* ---------- الشاشة الرئيسية ---------- */
+body[data-nav="app"] .aphero{padding:26px 2px 18px}
+body[data-nav="app"] .aphero h1{font-size:1.55rem;font-weight:800}
+body[data-nav="app"] .aphero p{font-size:.88rem;color:var(--ap-mute)}
+body[data-nav="app"] .apurg{height:40px;border-radius:11px;padding:0 16px;font-size:.84rem;display:inline-flex;align-items:center;gap:8px}
+
+body[data-nav="app"] .apgrid{grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:12px}
+body[data-nav="app"] .apcard{min-height:148px;padding:18px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--ap-line2);box-shadow:none;backdrop-filter:none;gap:0}
+body[data-nav="app"] .apcard:hover{transform:translateY(-3px);border-color:rgba(91,140,255,.45);background:linear-gradient(180deg,rgba(91,140,255,.09),rgba(255,255,255,.02))}
+body[data-nav="app"] .apic{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--ap-line2);color:var(--ap-blue);display:grid;place-items:center;margin-bottom:14px}
+body[data-nav="app"] .apic svg{width:21px;height:21px}
+body[data-nav="app"] .apcard.t1 .apic{color:#5B8CFF}
+body[data-nav="app"] .apcard.t2 .apic{color:#2DD4BF}
+body[data-nav="app"] .apcard.t3 .apic{color:#A78BFA}
+body[data-nav="app"] .apcard.t4 .apic{color:#F0B429}
+body[data-nav="app"] .apcard.t5 .apic{color:#F26D78}
+body[data-nav="app"] .apcard.t6 .apic{color:#5EEAD4}
+body[data-nav="app"] .apcard.t7 .apic{color:#F472B6}
+body[data-nav="app"] .apcard.t8 .apic{color:#94A3B8}
+body[data-nav="app"] .aptx b{font-size:.96rem;font-weight:700;letter-spacing:-.01em}
+body[data-nav="app"] .aptx small{font-size:.74rem;color:var(--ap-mute);margin-top:3px;line-height:1.5}
+body[data-nav="app"] .apst{margin-top:14px;padding-top:12px;border-top:1px solid var(--ap-line2);align-items:baseline}
+body[data-nav="app"] .apst b{font-size:1.22rem;letter-spacing:-.02em}
+body[data-nav="app"] .apst small{font-size:.7rem;color:var(--ap-mute)}
+body[data-nav="app"] .apdot{top:18px;inset-inline-end:18px;width:7px;height:7px;box-shadow:none}
+
+/* ---------- هيدر القسم ---------- */
+body[data-nav="app"] .apsec{margin:18px 0 16px;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.028);border:1px solid var(--ap-line2);backdrop-filter:none;gap:14px}
+body[data-nav="app"] .apback{height:36px;border-radius:10px;padding:0 14px;font-size:.8rem;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--ap-line2);display:inline-flex;align-items:center;gap:7px}
+body[data-nav="app"] .apsic{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--ap-line2);color:var(--ap-blue)}
+body[data-nav="app"] .apsic svg{width:20px;height:20px}
+body[data-nav="app"] .apstx b{font-size:1.05rem;letter-spacing:-.02em}
+body[data-nav="app"] .apstx small{font-size:.74rem;color:var(--ap-mute)}
+body[data-nav="app"] .apsnum{border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--ap-line2);padding:7px 13px}
+body[data-nav="app"] .apsnum b{font-size:1.02rem}
+body[data-nav="app"] .apact{height:38px;border-radius:10px;padding:0 15px;font-size:.81rem;font-weight:600;display:inline-flex;align-items:center;gap:7px;background:rgba(91,140,255,.12);border:1px solid rgba(91,140,255,.28);color:#CFE0FF}
+body[data-nav="app"] .apact:hover{background:rgba(91,140,255,.22);border-color:rgba(91,140,255,.5)}
+body[data-nav="app"] .apact svg{width:16px;height:16px}
+
+body[data-nav="app"] .apsgrid{gap:12px;margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
+body[data-nav="app"] .apstat{border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));border:1px solid var(--ap-line2);backdrop-filter:none}
+body[data-nav="app"] .apstat b{font-size:1.4rem;letter-spacing:-.02em;line-height:1.15}
+body[data-nav="app"] .apstat small{font-size:.73rem;color:var(--ap-mute);margin-top:3px;display:block}
+
+/* ---------- المكوّنات داخل الأقسام ---------- */
+body[data-nav="app"] .card{background:rgba(255,255,255,.025);border:1px solid var(--ap-line2);border-radius:16px;box-shadow:none;padding:18px;margin-bottom:14px}
+body[data-nav="app"] .card.tight{padding:0}
+body[data-nav="app"] .card-head{padding:14px 18px;border-bottom:1px solid var(--ap-line2)}
+body[data-nav="app"] .card h2{font-size:1rem;font-weight:700}
+body[data-nav="app"] .tile{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));border:1px solid var(--ap-line2);border-radius:14px;box-shadow:none;padding:14px 16px}
+body[data-nav="app"] .tile::before{display:none}
+body[data-nav="app"] .tile .num{font-size:1.45rem;letter-spacing:-.02em}
+body[data-nav="app"] .tile .lbl{font-size:.74rem;color:var(--ap-mute)}
+body[data-nav="app"] .tile .sub{font-size:.7rem;color:var(--ap-mute)}
+
+body[data-nav="app"] .btn{height:36px;border-radius:10px;padding:0 14px;font-size:.81rem;font-weight:600;background:rgba(255,255,255,.045);border:1px solid var(--ap-line2);color:var(--ap-ink);display:inline-flex;align-items:center;gap:6px;justify-content:center}
+body[data-nav="app"] .btn:hover{background:rgba(255,255,255,.09);border-color:var(--ap-line)}
+body[data-nav="app"] .btn.primary{background:var(--ap-blue);border-color:transparent;color:#061024;font-weight:700}
+body[data-nav="app"] .btn.primary:hover{background:#79A2FF}
+body[data-nav="app"] .btn.danger{background:rgba(229,72,77,.12);border-color:rgba(229,72,77,.32);color:#FF9AA2}
+body[data-nav="app"] .btn.sm{height:30px;padding:0 11px;font-size:.75rem;border-radius:8px}
+body[data-nav="app"] .btn.icon{width:36px;padding:0}
+
+body[data-nav="app"] .search,body[data-nav="app"] .field input,body[data-nav="app"] .field select,body[data-nav="app"] .field textarea{height:36px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--ap-line2);color:var(--ap-ink);font-size:.82rem;padding:0 13px}
+body[data-nav="app"] .field textarea{height:auto;padding:10px 13px}
+body[data-nav="app"] .search:focus,body[data-nav="app"] .field input:focus,body[data-nav="app"] .field select:focus{outline:none;border-color:var(--ap-blue);box-shadow:0 0 0 3px rgba(91,140,255,.14)}
+body[data-nav="app"] .field label{font-size:.74rem;color:var(--ap-mute);margin-bottom:5px;display:block}
+
+body[data-nav="app"] table{border-collapse:separate;border-spacing:0}
+body[data-nav="app"] th{font-size:.7rem;letter-spacing:.04em;text-transform:none;color:var(--ap-mute);font-weight:700;background:rgba(255,255,255,.025);border-bottom:1px solid var(--ap-line2);padding:11px 14px}
+body[data-nav="app"] td{padding:11px 14px;border-bottom:1px solid var(--ap-line2);font-size:.84rem}
+body[data-nav="app"] tbody tr{transition:background .12s}
+body[data-nav="app"] tbody tr:hover{background:rgba(91,140,255,.07)}
+body[data-nav="app"] tbody tr:last-child td{border-bottom:0}
+body[data-nav="app"] .table-wrap{border-radius:0 0 16px 16px;overflow:hidden}
+
+body[data-nav="app"] .badge{border-radius:8px;padding:3px 9px;font-size:.72rem;font-weight:600;border:1px solid transparent}
+body[data-nav="app"] .chip{height:32px;border-radius:9px;padding:0 13px;font-size:.78rem;font-weight:600;background:rgba(255,255,255,.04);border:1px solid var(--ap-line2);color:var(--ap-mute)}
+body[data-nav="app"] .chip.on{background:rgba(91,140,255,.16);border-color:rgba(91,140,255,.4);color:#fff}
+body[data-nav="app"] .tabs{gap:2px;border-bottom:1px solid var(--ap-line2);margin-bottom:16px}
+body[data-nav="app"] .tabs .tab,body[data-nav="app"] .tabs button{font-size:.84rem;font-weight:600;padding:10px 14px;color:var(--ap-mute);background:none;border:0;border-bottom:2px solid transparent;cursor:pointer}
+body[data-nav="app"] .tabs .tab.active,body[data-nav="app"] .tabs button.active{color:#fff;border-bottom-color:var(--ap-blue)}
+body[data-nav="app"] .modal{border-radius:18px;background:var(--ap-surface);border:1px solid var(--ap-line)}
+body[data-nav="app"] .empty{color:var(--ap-mute);font-size:.84rem;padding:30px}
+body[data-nav="app"] .kv div{background:rgba(255,255,255,.03);border:1px solid var(--ap-line2);border-radius:10px}
+body[data-nav="app"] .banner{border-radius:14px;font-size:.8rem}
+body[data-nav="app"] .ccav{border-radius:10px}
+body[data-nav="app"] .apurg svg,body[data-nav="app"] .apback svg{width:16px;height:16px;flex:none}
+body[data-nav="app"] .apurg{gap:8px}
+body[data-nav="app"] .btn svg,body[data-nav="app"] .appbar .btn svg{width:17px;height:17px;flex:none}
+body[data-nav="app"] .chip svg{width:15px;height:15px}
+
+/* ===== أشكال عرض البطاقات ===== */
+body[data-nav="app"] .apswitch{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid var(--ap-line2);margin:0 0 14px}
+body[data-nav="app"] .apsw{height:30px;padding:0 14px;border:0;border-radius:8px;background:none;color:var(--ap-mute);font-weight:600;font-size:.78rem;cursor:pointer}
+body[data-nav="app"] .apsw.on{background:rgba(91,140,255,.18);color:#fff}
+
+/* بينتو: أحجام متنوعة */
+body[data-nav="app"] .apbento{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:150px;gap:12px}
+body[data-nav="app"] .apbento .apcard{min-height:0;height:100%}
+body[data-nav="app"] .apbento .w2{grid-column:span 2}
+body[data-nav="app"] .apbento .h2{grid-row:span 2}
+body[data-nav="app"] .apbento .w2.h2 .aptx b{font-size:1.25rem}
+body[data-nav="app"] .apbento .w2.h2 .apst b{font-size:1.9rem}
+@media(max-width:1200px){body[data-nav="app"] .apbento{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){body[data-nav="app"] .apbento{grid-template-columns:repeat(2,minmax(0,1fr))}body[data-nav="app"] .apbento .w2{grid-column:span 2}}
+
+/* صفوف */
+body[data-nav="app"] .aprows{display:flex;flex-direction:column;gap:8px}
+body[data-nav="app"] .aprow{display:flex;align-items:center;gap:14px;width:100%;text-align:start;padding:14px 16px;border-radius:14px;cursor:pointer;color:var(--ap-ink);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));border:1px solid var(--ap-line2);transition:border-color .12s,background .12s,transform .12s}
+body[data-nav="app"] .aprow:hover{border-color:rgba(91,140,255,.45);background:rgba(91,140,255,.08);transform:translateX(-3px)}
+body[data-nav="app"] .aprow .apic{margin:0;width:40px;height:40px;flex:none}
+body[data-nav="app"] .aprow .aptx{flex:1;min-width:0}
+body[data-nav="app"] .aprow .apst{margin:0;padding:0;border:0;flex:none;flex-direction:column;align-items:flex-end;gap:0}
+body[data-nav="app"] .aprow .apst b{font-size:1.15rem;line-height:1.2}
+body[data-nav="app"] .aprow .apdot{position:static;flex:none}
+body[data-nav="app"] .apchev{color:var(--ap-mute);display:grid;place-items:center}
+body[data-nav="app"] .apchev svg{width:16px;height:16px;transform:rotate(-90deg)}
+
+/* صور الموظفين */
+body[data-nav="app"] .apfaces{display:flex;align-items:center;margin-top:12px}
+body[data-nav="app"] .apav{width:34px;height:34px;border-radius:50%;margin-inline-start:-9px;border:2px solid #0D1424;background:linear-gradient(145deg,#5B8CFF,#2DD4BF);color:#061024;font-weight:800;font-size:.68rem;display:grid;place-items:center;overflow:hidden;flex:none}
+body[data-nav="app"] .apav:first-child{margin-inline-start:0}
+body[data-nav="app"] .apav img{width:100%;height:100%;object-fit:cover}
+body[data-nav="app"] .apav.more{background:rgba(255,255,255,.1);color:var(--ap-ink);font-size:.7rem}
+body[data-nav="app"] .apfaces.sm .apav{width:28px;height:28px;font-size:.62rem}
+
+/* ===== الرسوم المصغّرة داخل البطاقات ===== */
+body[data-nav="app"] .apvz{display:block;margin-top:12px}
+body[data-nav="app"] .apviz{display:block;width:100%}
+body[data-nav="app"] .apvizwrap{flex:1;min-width:0}
+body[data-nav="app"] .apdonrow{display:flex;align-items:center;gap:12px}
+body[data-nav="app"] .apdon{flex:none}
+body[data-nav="app"] .aplg{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:7px;font-size:.66rem;color:var(--ap-mute)}
+body[data-nav="app"] .aplg i{width:7px;height:7px;border-radius:2px;display:inline-block;margin-inline-end:4px;vertical-align:middle}
+body[data-nav="app"] .apbarsv{display:flex;flex-direction:column;gap:6px}
+body[data-nav="app"] .aprowbar{display:flex;align-items:center;gap:8px;font-size:.68rem;color:var(--ap-mute)}
+body[data-nav="app"] .aprowbar small{width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-nav="app"] .aprowbar i{flex:1;height:6px;border-radius:4px;background:rgba(148,174,222,.16);overflow:hidden}
+body[data-nav="app"] .aprowbar i u{display:block;height:100%;background:#34D399;border-radius:4px}
+body[data-nav="app"] .aprowbar b{color:var(--ap-ink);font-size:.68rem;min-width:30px;text-align:end}
+body[data-nav="app"] .apcard{min-height:206px}
+body[data-nav="app"] .apgrid{grid-template-columns:repeat(auto-fill,minmax(258px,1fr))}
+body[data-nav="app"] .apbento{grid-auto-rows:206px}
+body[data-nav="app"] .apbento .apcard{overflow:hidden}
+body[data-nav="app"] .aprow .apvz.row{flex:1.1;max-width:300px;margin:0}
+body[data-nav="app"] .aprow .aplg{margin-top:3px}
+
+body[data-nav="app"] .apbars{display:flex;align-items:flex-end;gap:7px;width:100%}
+body[data-nav="app"] .apbars i{flex:1;max-width:30px;min-width:4px;border-radius:4px;display:block}
+body[data-nav="app"] .apbento{grid-auto-rows:188px}
+body[data-nav="app"] .apcard{min-height:188px}
+body[data-nav="app"] .apbento .apcard .apvz{margin-top:auto;padding-top:10px}
+body[data-nav="app"] .apbento .w2.h2 .apfaces{margin-top:10px}
+
+/* الثيمات الفاتحة: ألوان نص مناسبة */
+html[data-tone="light"] body[data-nav="app"]{--ap-ink:#0D1526;--ap-mute:#5A6782;--ap-line:rgba(20,40,80,.14);--ap-line2:rgba(20,40,80,.1)}
+html[data-tone="light"] body[data-nav="app"] .app{background:linear-gradient(180deg,#F4F7FB,#E9EFF7)}
+html[data-tone="light"] body[data-nav="app"] .appbar{background:rgba(255,255,255,.9)}
+html[data-tone="light"] body[data-nav="app"] .abrand,html[data-tone="light"] body[data-nav="app"] h1,html[data-tone="light"] body[data-nav="app"] .aptx b,html[data-tone="light"] body[data-nav="app"] .apst b,html[data-tone="light"] body[data-nav="app"] .apstat b,html[data-tone="light"] body[data-nav="app"] .apstx b{color:#0D1526}
+html[data-tone="light"] body[data-nav="app"] .apcard,html[data-tone="light"] body[data-nav="app"] .aprow,html[data-tone="light"] body[data-nav="app"] .apstat,html[data-tone="light"] body[data-nav="app"] .apsec{background:#fff;border-color:rgba(20,40,80,.1)}
+html[data-tone="light"] body[data-nav="app"] .card{background:#fff}
+html[data-tone="light"] body[data-nav="app"] th{background:rgba(20,40,80,.04)}
+html[data-tone="light"] body[data-nav="app"] .btn{background:#fff;color:#0D1526}
+html[data-tone="light"] body[data-nav="app"] .chip.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+html[data-tone="light"] body[data-nav="app"] .btn.primary{background:var(--accent);color:var(--accent-ink)}
+html[data-tone="light"] body[data-nav="app"] .apav{border-color:#fff}
+
+/* تنظيف الشريط العلوي: بدون أزرار مكررة، ونص اللغة مختصر */
+body[data-nav="app"] #appbar .btn[onclick*="openAppearance"]:not(#abLook),
+body[data-nav="app"] #appbar .btn[onclick*="openSectionControl"]{display:none}
+body[data-nav="app"] #appbar .langBtn span{display:none}
+body[data-nav="app"] #appbar .actions{flex-wrap:wrap;justify-content:flex-end;gap:6px}
+body[data-nav="app"] .apdon{color:var(--ap-ink)}
+body[data-nav="app"] #abHome{background:rgba(91,140,255,.14);border-color:rgba(91,140,255,.3);color:#CFE0FF}
+html[data-tone="light"] body[data-nav="app"] #abHome{background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.25);color:#1D4ED8}
+
+/* التمرير مضمون في كل الأشكال */
+body[data-nav="app"] .main,body[data-nav="top"] .main{overflow-y:auto!important;overflow-x:hidden}
+body[data-nav="app"] #page,body[data-nav="top"] #page{overflow:visible}
+/* الأيقونات في كل أشرطة الأدوات (مش بس وضع التطبيق) */
+.actions .btn svg,#topTools .btn svg,.topbar .btn svg{width:17px;height:17px;flex:none}
+.actions .btn,#topTools .btn{display:inline-flex;align-items:center;gap:6px}
+
+/* زر الرجوع العائم — ظاهر دائماً في كل الأشكال والثيمات */
+.apfab{position:fixed;inset-inline-start:22px;bottom:22px;z-index:60;display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 20px;border-radius:999px;cursor:pointer;font-weight:700;font-size:.86rem;font-family:var(--font-head,inherit);color:#fff;background:linear-gradient(145deg,#5B8CFF,#3F6FE0);border:1px solid rgba(255,255,255,.18);box-shadow:0 14px 30px -10px rgba(16,36,80,.75),0 2px 8px rgba(0,0,0,.25);transition:transform .12s,box-shadow .12s,opacity .15s}
+.apfab:hover{transform:translateY(-2px);box-shadow:0 18px 36px -10px rgba(16,36,80,.85)}
+.apfab:active{transform:translateY(0) scale(.98)}
+.apfab svg{width:18px;height:18px;flex:none}
+.apfab.hidden{display:none!important}
+html[data-tone="light"] .apfab{background:linear-gradient(145deg,#2563EB,#1D4ED8);box-shadow:0 14px 28px -12px rgba(37,99,235,.6)}
+@media(max-width:560px){.apfab{height:42px;padding:0 16px;inset-inline-start:14px;bottom:14px}}
