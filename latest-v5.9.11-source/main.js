@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, Notification, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Notification, Menu, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -24,6 +24,7 @@ const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 const DB_FILE = path.join(DATA_DIR, 'hr.db.enc');
 const META_FILE = path.join(DATA_DIR, 'meta.json');
 const PREFS_FILE = path.join(DATA_DIR, 'prefs.json');
+const LOGIN_PREFS_FILE = path.join(app.getPath('userData'), 'login-preferences.json');
 const LIC = new Licensing(DATA_DIR);
 if (!app.isPackaged && process.env.HRP_TEST_PUBKEY) require('./license').setTestPublicKey(process.env.HRP_TEST_PUBKEY); // اختبارات آلية فقط — لا يعمل في النسخة المثبّتة
 function requireLicense() { const ds = deviceStatus(); if (ds.status === 'killed' || ds.status === 'disabled') throw new Error('device-' + ds.status); const st = LIC.status(); if (!['licensed', 'trial'].includes(st.state)) throw new Error('license-expired'); }
@@ -934,7 +935,27 @@ ipcMain.handle('file:pickText', async () => { const r = await dialog.showOpenDia
 
 /* ---------- backup / restore (binary container v3) ---------- */
 const prefs = () => { const p = readJSON(PREFS_FILE, {}); return { extraBackupDir: typeof p.extraBackupDir === 'string' ? p.extraBackupDir : '', keep: Math.max(1, Math.min(365, +p.keep || 30)), autostart: !!p.autostart, syncUrl: typeof p.syncUrl === 'string' ? p.syncUrl : '', syncToken: typeof p.syncToken === 'string' ? p.syncToken : '', syncEnabled: !!p.syncEnabled }; };
+function readLoginPrefs() {
+  const empty = { remember: false, autoLogin: false, username: '', password: '' };
+  try {
+    const p = readJSON(LOGIN_PREFS_FILE, null);
+    if (!p || !p.data || !safeStorage.isEncryptionAvailable()) return empty;
+    const v = JSON.parse(safeStorage.decryptString(Buffer.from(p.data, 'base64')));
+    return { remember: !!v.remember, autoLogin: !!v.autoLogin, username: String(v.username || '').slice(0, 120), password: String(v.password || '').slice(0, 500) };
+  } catch { return empty; }
+}
+function writeLoginPrefs(v) {
+  if (!v || !v.remember) { try { fs.unlinkSync(LOGIN_PREFS_FILE); } catch { } return { remember: false, autoLogin: false, username: '', password: '' }; }
+  if (!safeStorage.isEncryptionAvailable()) throw new Error('secure-storage-unavailable');
+  const data = safeStorage.encryptString(JSON.stringify({ remember: true, autoLogin: !!v.autoLogin, username: String(v.username || '').slice(0, 120), password: String(v.password || '').slice(0, 500) }));
+  writeJSON(LOGIN_PREFS_FILE, { v: 1, data: data.toString('base64') });
+  return readLoginPrefs();
+}
 ipcMain.handle('prefs:get', () => prefs());
+ipcMain.handle('startup:get', () => ({ enabled: prefs().autostart, platform: process.platform }));
+ipcMain.handle('startup:set', (e, enabled) => { const cur = prefs(); const next = { ...cur, autostart: !!enabled }; if (process.platform === 'win32') app.setLoginItemSettings({ openAtLogin: next.autostart }); writeJSON(PREFS_FILE, next); return { enabled: next.autostart, platform: process.platform }; });
+ipcMain.handle('loginprefs:get', () => readLoginPrefs());
+ipcMain.handle('loginprefs:set', (e, v) => writeLoginPrefs(v));
 ipcMain.handle('prefs:set', (e, p) => { requireAdmin(); if (!p || typeof p !== 'object') throw new Error('bad'); const cur = prefs(); const next = { ...cur }; if ('extraBackupDir' in p) { const d = typeof p.extraBackupDir === 'string' ? p.extraBackupDir : ''; if (d && !(path.isAbsolute(d) && fs.existsSync(d))) throw new Error('bad-dir'); next.extraBackupDir = d; } if ('keep' in p) next.keep = Math.max(1, Math.min(365, +p.keep || 30)); if ('autostart' in p) { next.autostart = !!p.autostart; if (process.platform === 'win32') app.setLoginItemSettings({ openAtLogin: next.autostart }); } writeJSON(PREFS_FILE, next); return next; });
 function u32(n) { const b = Buffer.alloc(4); b.writeUInt32LE(n); return b; }
 function makeBackupBuffer() {

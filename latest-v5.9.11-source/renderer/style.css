@@ -25,6 +25,7 @@ h1{font-size:1.5rem}h2{font-size:1.15rem}h3{font-size:1rem}
 .lock-logo img{width:100px;filter:drop-shadow(0 10px 24px rgba(18,181,166,.45))}
 .lock-card h1{font-size:1.4rem}
 .lock-card input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;margin:8px 0;font-size:1rem;text-align:center;background:var(--navy-2);color:var(--text)}
+.password-row{position:relative}.password-row input{padding-inline-end:52px}.eye-btn{position:absolute;inset-inline-end:8px;top:10px;border:0;background:transparent;color:var(--muted);font-size:1.15rem;cursor:pointer;padding:7px;border-radius:8px}.eye-btn:hover{background:var(--accent-tint);color:var(--text)}.login-options{margin:8px 0 12px;text-align:start}.login-options .chk{font-size:.86rem;background:transparent;padding:4px 0}
 .lock-card input:focus{outline:2px solid var(--accent-tint);border-color:var(--accent)}
 .lock-card .btn{width:100%;justify-content:center;margin-top:8px;padding:12px}
 .strength{height:6px;border-radius:99px;background:var(--line-2);margin:4px 0 8px;overflow:hidden}.strength i{display:block;height:100%;background:var(--danger);transition:.2s}

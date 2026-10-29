@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
   file: { save: inv('file:save'), get: inv('file:get'), delete: inv('file:delete'), pick: inv('file:pick'), pickText: inv('file:pickText'), pickSheet: inv('file:pickSheet') },
   backup: { emergency: inv('backup:emergency'), now: inv('backup:now'), saveAs: inv('backup:saveAs'), list: inv('backup:list'), openFolder: inv('backup:openFolder'), chooseDir: inv('backup:chooseDir'), restore: inv('backup:restore'), exportPlain: inv('backup:exportPlain'), offersFromBackup: inv('offers:fromBackup') },
   prefs: { get: inv('prefs:get'), set: inv('prefs:set') },
+  startup: { get: inv('startup:get'), set: inv('startup:set') },
+  loginprefs: { get: inv('loginprefs:get'), set: inv('loginprefs:set') },
   user: { list: inv('user:list'), create: inv('user:create'), update: inv('user:update'), resetPassword: inv('user:resetPassword'), unbindDevice: inv('user:unbindDevice'), delete: inv('user:delete') }, device: inv('app:device'),
   sync: { status: inv('sync:status'), test: inv('sync:test'), configure: inv('sync:configure'), now: inv('sync:now'), onState: cb => ipcRenderer.on('sync:state', (e, st) => cb(st)), onReloaded: cb => ipcRenderer.on('sync:reloaded', (e, info) => cb(info)) },
   draft: { get: inv('draft:get'), set: inv('draft:set'), del: inv('draft:del'), list: inv('draft:list') },
