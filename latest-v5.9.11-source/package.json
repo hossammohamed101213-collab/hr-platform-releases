@@ -1,7 +1,7 @@
 {
   "name": "hr-platform",
   "productName": "منصة شؤون الموظفين",
-  "version": "5.9.11",
+  "version": "5.9.13",
   "description": "منصة مغلقة لإدارة شؤون الموظفين — تعمل بدون إنترنت",
   "main": "main.js",
   "author": "Hossam",
